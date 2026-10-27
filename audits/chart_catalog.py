@@ -21,7 +21,7 @@ CHARTS = [{'id': 'controls',
   'subtitle': 'CUMPLE y NO CUMPLE entre evaluaciones aplicables',
   'meaning': 'Compara las evaluaciones de los once controles agrupadas por línea. Se suman primero todas las '
              'evaluaciones aplicables.',
-  'calculation': 'Cumplimiento = CUMPLE / (CUMPLE + NO CUMPLE) × 100. N/A y vacíos se excluyen.',
+  'calculation': 'Cumplimiento = (CUMPLE + N/A) / (CUMPLE + N/A + NO CUMPLE) × 100. N/A cuenta como cumplido; los vacíos se excluyen.',
   'interpretation': 'Una línea con más auditorías tiene mayor peso según sus evaluaciones. Consulta los '
                     'denominadores y los N/A; sin aplicables se muestra Sin datos aplicables.'},
  {'id': 'shifts',
@@ -63,8 +63,8 @@ CHARTS = [{'id': 'controls',
   'subtitle': 'Porcentaje de NO CUMPLE y denominador aplicable',
   'meaning': 'Cruza cada línea con cada uno de los once requisitos. Una celda resume sus evaluaciones '
              'aplicables.',
-  'calculation': 'Celda = NO CUMPLE / (CUMPLE + NO CUMPLE) × 100. Debajo se muestra NO CUMPLE / aplicables.',
-  'interpretation': 'Un color más intenso indica mayor porcentaje. N/A y vacíos no entran al denominador. '
+  'calculation': 'Celda = NO CUMPLE / (CUMPLE + N/A + NO CUMPLE) × 100. Debajo se muestra NO CUMPLE / aplicables.',
+  'interpretation': 'Un color más intenso indica mayor porcentaje. N/A cuenta como cumplido y entra al denominador; los vacíos se excluyen. '
                     'Sin aplicables no equivale a 0 %.'},
  {'id': 'requirement_profile',
   'title': 'Cumplimiento por requisito',
@@ -72,9 +72,8 @@ CHARTS = [{'id': 'controls',
   'meaning': 'Muestra los cuatro estados por cada uno de los once controles. Las barras apiladas cuentan '
              'evaluaciones; la leyenda separa los estados.',
   'calculation': 'Para cada requisito: CUMPLE + NO CUMPLE + N/A + Sin dato = total de auditorías filtradas. '
-                 'Cumplimiento = CUMPLE / (CUMPLE + NO CUMPLE) × 100.',
-  'interpretation': 'Permite distinguir incumplimiento de falta de evaluación. N/A y Sin dato no se '
-                    'interpretan como cumplimiento. El número de auditorías es el mismo para cada '
+                 'Cumplimiento = (CUMPLE + N/A) / (CUMPLE + N/A + NO CUMPLE) × 100.',
+  'interpretation': 'Permite distinguir incumplimiento de falta de evaluación. N/A se interpreta como cumplimiento; Sin dato se excluye. El número de auditorías es el mismo para cada '
                     'requisito.'},
  {'id': 'failure_distribution',
   'title': 'Incumplimientos por auditoría',
@@ -108,7 +107,7 @@ CHARTS = [{'id': 'controls',
   'subtitle': 'Cumplimiento ponderado por día o semana',
   'meaning': 'Muestra la evolución del cumplimiento de los once controles entre las evaluaciones aplicables '
              'de cada período.',
-  'calculation': 'CUMPLE del período / (CUMPLE + NO CUMPLE del período) × 100. No se promedian los '
+  'calculation': '(CUMPLE + N/A del período) / (CUMPLE + N/A + NO CUMPLE del período) × 100. No se promedian los '
                  'porcentajes de auditorías o líneas.',
   'interpretation': 'Es diferente del porcentaje de auditorías con hallazgos: una auditoría puede cumplir '
                     'unos controles e incumplir otros. Los períodos sin aplicables son huecos, no '
@@ -121,7 +120,7 @@ CHARTS = [{'id': 'controls',
   'calculation': 'Celda = NO CUMPLE del proceso y requisito / evaluaciones aplicables de esa combinación × '
                  '100.',
   'interpretation': 'Ayuda a ubicar concentraciones de hallazgos. Revisa el denominador: una sola evaluación '
-                    'puede dar 100 %. No demuestra causas y excluye N/A y vacíos.'},
+                    'puede dar 100 %. No demuestra causas. Incluye N/A como cumplidos y excluye vacíos.'},
  {'id': 'visual_processes',
   'title': 'Defectos visuales por proceso',
   'subtitle': 'Detecciones por proceso, separadas por tipo de defecto',
@@ -137,6 +136,6 @@ CHARTS.append({
  'id':'operators','title':'Cumplimiento por nómina de operador',
  'subtitle':'Evaluaciones aplicables asociadas al empleado auditado',
  'meaning':'Agrupa las auditorías por Nómina Operador, el identificador del empleado auditado. Nomina Inspector corresponde a quien realizó la auditoría y no se usa para identificar al operador.',
- 'calculation':'Para cada nómina: CUMPLE / (CUMPLE + NO CUMPLE) × 100 en los once controles. Se suman las evaluaciones antes de dividir. N/A y vacíos se excluyen y se muestran aparte. También se indican las auditorías con incumplimientos y con defectos visuales.',
+ 'calculation':'Para cada nómina: (CUMPLE + N/A) / (CUMPLE + N/A + NO CUMPLE) × 100 en los once controles. Se suman las evaluaciones antes de dividir. N/A cuenta como cumplido; los vacíos se excluyen. También se indican las auditorías con incumplimientos y con defectos visuales.',
  'interpretation':'Compara los porcentajes junto con la cantidad de auditorías y el denominador aplicable. Resume condiciones de las auditorías asociadas al operador, incluidos mantenimiento y equipo; no demuestra que el empleado sea la causa de los hallazgos ni mide su productividad. Sin evaluaciones aplicables no equivale a 100 %. Los registros sin nómina se agrupan aparte.'
 })

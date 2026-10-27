@@ -1,4 +1,4 @@
-import io, copy, tempfile
+import csv, io, copy, tempfile
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
@@ -76,7 +76,7 @@ class ImportTests(TestCase):
         r=self.parse([row(),{},row(ID='002')]);self.assertEqual(r['skipped'],1);self.assertEqual(len(r['rows']),2)
     def test_zero_denominators(self):
         imp,_=confirm(self.parse([row(**{h:'N/A' for h in CONTROLS})]),self.user)
-        m=metrics(imp.audits.all());self.assertIsNone(m['summary']['compliance']);self.assertEqual(m['summary']['na'],11)
+        m=metrics(imp.audits.all());self.assertEqual(m['summary']['compliance'],100);self.assertEqual(m['summary']['na'],11)
     def test_combined_filters(self):
         imp,_=confirm(self.parse([row(),row(ID='2',Turno='NOCHE',**{CONTROLS[0]:'NO CUMPLE'})]),self.user)
         q=filtered(imp,{'turno':'NOCHE','linea':'L1','desde':'2026-10-05','hallazgos':'controles'}); self.assertEqual(q.count(),1)
@@ -94,11 +94,11 @@ class ImportTests(TestCase):
         for imp,expected in [(a,expected_a),(b,expected_b),(a,expected_a)]:
             r=self.client.get('/',{'importacion':imp.pk},follow=True);self.assertEqual(r.status_code,200);self.assertEqual(r.context['metrics'],expected)
             response=self.client.get('/datos/');self.assertEqual(response.json(),expected)
-            response=self.client.get('/exportar/'); self.assertNotIn('\ufeff',response.content.decode('utf-8-sig')); self.assertEqual(len(list(__import__('csv').reader(io.StringIO(response.content.decode('utf-8-sig'))))),imp.count+1)
+            response=self.client.get('/exportar/'); self.assertNotIn('\ufeff',response.content.decode('utf-8-sig')); self.assertEqual(len(list(csv.reader(io.StringIO(response.content.decode('utf-8-sig'))))),imp.count+1)
         self.assertEqual(self.client.get('/auditoria/'+str(b.audits.first().pk)+'/').status_code,404)
     def test_weighted_lines_and_union(self):
         imp,_=confirm(self.parse([row(**{CONTROLS[0]:'NO CUMPLE',DEFECTS[0]:'DETECTADO'}),row(ID='2',**{h:'N/A' for h in CONTROLS})]),self.user)
-        m=metrics(imp.audits.all()); self.assertEqual(m['summary']['union'],1); self.assertEqual(m['lines'][0]['applicable'],11);self.assertEqual(m['lines'][0]['compliance'],90.91)
+        m=metrics(imp.audits.all()); self.assertEqual(m['summary']['union'],1); self.assertEqual(m['lines'][0]['applicable'],22);self.assertEqual(m['lines'][0]['compliance'],95.45)
     def test_access(self):
         for url in ['/','/datos/','/exportar/','/importar/','/auditoria/1/']: self.assertEqual(self.client.get(url).status_code,302)
         self.client.force_login(self.user)
@@ -164,7 +164,7 @@ class ImportTests(TestCase):
     def test_requirement_states_and_distribution(self):
         imp=self.expanded_fixture();m=metrics(imp.audits.all());first=m['requirement_profile'][0]
         self.assertEqual((first['passes'],first['failures'],first['na'],first['missing']),(1,2,1,1))
-        self.assertEqual(first['compliance'],33.33)
+        self.assertEqual(first['compliance'],50)
         for r in m['requirement_profile']:self.assertEqual(r['passes']+r['failures']+r['na']+r['missing'],5)
         dist={r['number']:r for r in m['failure_distribution']}
         self.assertEqual((dist[0]['count'],dist[1]['count'],dist[0]['with_missing']),(3,2,1))
@@ -183,11 +183,11 @@ class ImportTests(TestCase):
         self.assertEqual((p1['detections'],p1['with_defects'],p1['total'],p1['pct']),(2,1,2,50))
         self.assertEqual(sum(p1['counts']),p1['detections'])
         cell=next(r for r in m['process_heat'] if r['label']=='P1')['cells'][0]
-        self.assertEqual((cell['bad'],cell['den'],cell['pct']),(1,1,100))
+        self.assertEqual((cell['bad'],cell['den'],cell['pct']),(1,2,50))
 
     def test_compliance_evolution_weighting_week_and_missing(self):
         imp=self.expanded_fixture();weekly=metrics(imp.audits.all(),True)['timeline'];self.assertEqual((weekly[0]['passes'],weekly[0]['applicable'],weekly[0]['compliance']),(31,33,93.94))
-        self.assertIsNone(weekly[1]['compliance'])
+        self.assertEqual(weekly[1]['compliance'],100)
         daily=metrics(imp.audits.all())['timeline'];self.assertIsNone(daily[1]['compliance'])
         missing=next(r for r in daily if r['label']=='2026-10-14');self.assertEqual(missing['total'],1);self.assertIsNone(missing['compliance'])
 
@@ -215,9 +215,9 @@ class ImportTests(TestCase):
         ]),self.user)
         groups={r['operador']:r for r in metrics(imp.audits.all())['operators']}
         self.assertEqual(len(groups),3)
-        self.assertEqual((groups['0007']['total'],groups['0007']['passes'],groups['0007']['applicable'],groups['0007']['compliance']),(2,11,12,91.67))
+        self.assertEqual((groups['0007']['total'],groups['0007']['passes'],groups['0007']['applicable'],groups['0007']['compliance']),(2,11,22,95.45))
         self.assertEqual(groups['0007']['bad'],1);self.assertEqual(groups['0007']['na'],10)
-        self.assertIsNone(groups['7']['compliance']);self.assertEqual(groups['']['total'],1)
+        self.assertEqual(groups['7']['compliance'],100);self.assertEqual(groups['']['total'],1)
         self.assertEqual(filtered(imp,{'operador':'0007'}).count(),2)
         self.assertEqual(filtered(imp,{'operador':'0007','inspector':'9999'}).count(),1)
         self.user.is_superuser=True;self.user.save();self.client.force_login(self.user)
@@ -274,3 +274,46 @@ class ImportTests(TestCase):
             call_command('collectstatic',interactive=False,verbosity=0)
             self.assertTrue((Path(tmp)/'chart-help.css').is_file())
             self.assertTrue((Path(tmp)/'bar-track.js').is_file())
+
+    def test_week_filter_includes_monday_through_sunday(self):
+        dates = [datetime(2026,10,4), datetime(2026,10,5), datetime(2026,10,9), datetime(2026,10,10), datetime(2026,10,11), datetime(2026,10,12)]
+        imp,_=confirm(self.parse([row(ID=str(i),**{'Fecha Registro':day}) for i,day in enumerate(dates)]),self.user)
+        self.assertEqual(list(filtered(imp,{'semana':'2026-W41'}).order_by('date').values_list('source_id',flat=True)),['1','2','3','4'])
+        self.assertEqual(filtered(imp,{'semana':'2026-W41','desde':'2026-10-10'}).count(),2)
+        for invalid in ['2026-W99','invalid','2026-W00']:
+            self.assertFalse(filtered(imp,{'semana':invalid}).exists())
+        self.client.force_login(self.user)
+        response=self.client.get('/',{'importacion':imp.pk,'semana':'2026-W41'})
+        self.assertContains(response,'Semana (lunes a domingo)')
+        self.assertContains(response,'05/10/2026 al 11/10/2026')
+        self.assertEqual(response.context['metrics']['summary']['total'],4)
+        self.assertEqual(self.client.get('/datos/',{'semana':'2026-W41'}).json()['summary']['total'],4)
+        self.assertEqual(len(list(csv.reader(io.StringIO(self.client.get('/exportar/',{'semana':'2026-W41'}).content.decode('utf-8-sig'))))),5)
+
+    def test_iso_week_crosses_calendar_year(self):
+        imp,_=confirm(self.parse([row(ID='1',**{'Fecha Registro':datetime(2025,12,29)}),row(ID='2',**{'Fecha Registro':datetime(2026,1,4)}),row(ID='3',**{'Fecha Registro':datetime(2026,1,5)})]),self.user)
+        self.assertEqual(filtered(imp,{'semana':'2026-W01'}).count(),2)
+
+    def test_week_44_2026_shows_only_that_weeks_results(self):
+        dates=[datetime(2026,10,25),datetime(2026,10,26),datetime(2026,10,30),datetime(2026,11,1),datetime(2026,11,2)]
+        imp,_=confirm(self.parse([row(ID=str(i),**{'Fecha Registro':day}) for i,day in enumerate(dates)]),self.user)
+        self.client.force_login(self.user)
+        params={'importacion':imp.pk,'semana':'2026-W44'}
+        response=self.client.get('/',params)
+        self.assertContains(response,'Semana 44/2026')
+        self.assertContains(response,'26/10/2026 al 01/11/2026')
+        self.assertEqual(response.context['metrics']['summary']['total'],3)
+        self.assertEqual({a.source_id for a in response.context['page']},{'1','2','3'})
+        self.assertEqual(self.client.get('/presentacion/',params).context['metrics']['summary']['total'],3)
+        self.assertEqual(self.client.get('/datos/',params).json()['summary']['total'],3)
+
+    def test_na_counts_as_compliant_in_existing_imports(self):
+        imp,_=confirm(self.parse([row(**{h:'N/A' for h in CONTROLS})]),self.user)
+        m=metrics(imp.audits.all())
+        self.assertEqual(m['summary']['compliant'],11)
+        for group in ['lines','shifts','processes','machines','operators','requirement_profile','timeline']:
+            self.assertEqual(m[group][0]['compliance'],100,group)
+        self.assertEqual(m['heat'][0]['cells'][0]['den'],1)
+        self.assertEqual(imp.audits.get().values[CONTROLS[0]],'N/A')
+        imp.audits.update(passes=0,na=0,missing=11,values={h:'' for h in CONTROLS})
+        self.assertIsNone(metrics(imp.audits.all())['summary']['compliance'])

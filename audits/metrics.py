@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import date, timedelta
+import re
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDay, TruncWeek
 from .schema import CONTROLS, DEFECTS, DIMENSIONS
@@ -14,6 +15,15 @@ def filtered(imp,params):
         if params.get(key):
             try: qs=qs.filter(**{lookup:parse_date(params[key])})
             except ValueError: qs=qs.none()
+    if params.get('semana'):
+        try:
+            match = re.fullmatch(r'(\d{4})-W(\d{2})', params['semana'])
+            if not match:
+                raise ValueError('Semana inválida')
+            monday = date.fromisocalendar(int(match[1]), int(match[2]), 1)
+            qs = qs.filter(date__gte=monday, date__lte=monday + timedelta(days=6))
+        except ValueError:
+            qs = qs.none()
     finding=params.get('hallazgos')
     if finding=='controles': qs=qs.filter(failures__gt=0)
     elif finding=='visuales': qs=qs.filter(detections__gt=0)
@@ -29,7 +39,7 @@ def filtered(imp,params):
 def aggregate(qs):
     a=qs.aggregate(total=Count('pk'),with_failures=Count('pk',filter=Q(failures__gt=0)),with_defects=Count('pk',filter=Q(detections__gt=0)),union=Count('pk',filter=Q(failures__gt=0)|Q(detections__gt=0)),failures=Sum('failures'),detections=Sum('detections'),passes=Sum('passes'),missing=Sum('missing'),na=Sum('na'),inconsistent=Count('pk',filter=Q(inconsistent=True)))
     for k in a: a[k]=a[k] or 0
-    a['applicable']=a['passes']+a['failures']; a['compliance']=pct(a['passes'],a['applicable']); a['failure_pct']=pct(a['with_failures'],a['total']); a['defect_pct']=pct(a['with_defects'],a['total'])
+    a['compliant']=a['passes']+a['na']; a['applicable']=a['compliant']+a['failures']; a['compliance']=pct(a['compliant'],a['applicable']); a['failure_pct']=pct(a['with_failures'],a['total']); a['defect_pct']=pct(a['with_defects'],a['total'])
     return a
 
 def pareto(qs,fields,state):
@@ -42,7 +52,7 @@ def pareto(qs,fields,state):
 def grouped(qs,field):
     rows=list(qs.values(field).annotate(total=Count('pk'),bad=Count('pk',filter=Q(failures__gt=0)),passes=Sum('passes'),failures=Sum('failures'),na=Sum('na'),missing=Sum('missing'),with_defects=Count('pk',filter=Q(detections__gt=0))).order_by(field))
     for r in rows:
-        r['label']=r[field] or 'Sin dato'; r['applicable']=r['passes']+r['failures']; r['pct']=pct(r['bad'],r['total']); r['compliance']=pct(r['passes'],r['applicable'])
+        r['label']=r[field] or 'Sin dato'; r['compliant']=r['passes']+r['na']; r['applicable']=r['compliant']+r['failures']; r['pct']=pct(r['bad'],r['total']); r['compliance']=pct(r['compliant'],r['applicable'])
     return rows
 
 def evaluation_profile(qs):
@@ -50,7 +60,7 @@ def evaluation_profile(qs):
     result=[]
     for i,h in enumerate(CONTROLS):
         passes=counts['p'+str(i)]; failures=counts['f'+str(i)]
-        result.append({'label':h,'passes':passes,'failures':failures,'na':counts['n'+str(i)],'missing':counts['m'+str(i)],'applicable':passes+failures,'compliance':pct(passes,passes+failures)})
+        result.append({'label':h,'passes':passes,'failures':failures,'na':counts['n'+str(i)],'missing':counts['m'+str(i)],'compliant':passes+counts['n'+str(i)],'applicable':passes+failures+counts['n'+str(i)],'compliance':pct(passes+counts['n'+str(i)],passes+failures+counts['n'+str(i)])})
     return result
 
 def heatmap(qs,dimension):
@@ -83,13 +93,25 @@ def operator_compliance(qs):
 def metrics(qs,weekly=False):
     a=aggregate(qs)
     fn=TruncWeek if weekly else TruncDay
-    evolution=list(qs.annotate(period=fn('date')).values('period').annotate(total=Count('pk'),bad=Count('pk',filter=Q(failures__gt=0)),passes=Sum('passes'),failures=Sum('failures')).order_by('period'))
+    evolution=list(qs.annotate(period=fn('date')).values('period').annotate(total=Count('pk'),bad=Count('pk',filter=Q(failures__gt=0)),passes=Sum('passes'),failures=Sum('failures'),na=Sum('na')).order_by('period'))
     periods={r['period'].date() if hasattr(r['period'],'date') else r['period']:r for r in evolution}; timeline=[]
     if periods:
         current=min(periods); end=max(periods)
         while current<=end:
-            r=periods.get(current,{'total':0,'bad':0,'passes':0,'failures':0}); den=r['passes']+r['failures']
-            timeline.append({'label':current.isoformat(),'total':r['total'],'bad':r['bad'],'pct':pct(r['bad'],r['total']),'passes':r['passes'],'failures':r['failures'],'applicable':den,'compliance':pct(r['passes'],den)})
+            r=periods.get(current,{'total':0,'bad':0,'passes':0,'failures':0,'na':0}); compliant=r['passes']+r['na']; den=compliant+r['failures']
+            timeline.append({'label':current.isoformat(),'total':r['total'],'bad':r['bad'],'pct':pct(r['bad'],r['total']),'passes':r['passes'],'failures':r['failures'],'applicable':den,'na':r['na'],'compliant':compliant,'compliance':pct(compliant,den)})
             current+=timedelta(days=7 if weekly else 1)
     distribution=[{'number':r['failures'],'label':str(r['failures'])+' incumplimientos','count':r['count'],'pct':pct(r['count'],a['total']),'with_missing':r['with_missing']} for r in qs.values('failures').annotate(count=Count('pk'),with_missing=Count('pk',filter=Q(missing__gt=0))).order_by('failures')]
     return {'summary':a,'controls':pareto(qs,CONTROLS,'NO CUMPLE'),'defects':pareto(qs,DEFECTS,'DETECTADO'),'lines':grouped(qs,'linea'),'shifts':grouped(qs,'turno'),'processes':grouped(qs,'proceso'),'machines':sorted(grouped(qs,'maquina'),key=lambda r:-r['bad']),'timeline':timeline,'heat':heatmap(qs,'linea'),'requirements':CONTROLS,'requirement_profile':evaluation_profile(qs),'failure_distribution':distribution,'status_findings':status_findings(qs),'line_shifts':line_shifts(qs),'process_heat':heatmap(qs,'proceso'),'visual_processes':visual_processes(qs),'defect_types':DEFECTS,'operators':operator_compliance(qs)}
+
+
+def week_options(imp):
+    periods = imp.audits.annotate(monday=TruncWeek('date')).order_by('-monday').values_list('monday', flat=True).distinct()
+    options = []
+    for monday in periods:
+        if hasattr(monday, 'date'):
+            monday = monday.date()
+        year, week, _ = monday.isocalendar()
+        sunday = monday + timedelta(days=6)
+        options.append({'value': f'{year}-W{week:02d}', 'label': f'Semana {week:02d}/{year} · {monday:%d/%m/%Y} al {sunday:%d/%m/%Y}'})
+    return options

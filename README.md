@@ -73,7 +73,7 @@ No hubo errores ni advertencias en el archivo de referencia. Todas las cifras es
 - La primera fila de cada hoja contiene los encabezados. Se detectan por los 36 nombres, normalizando mayúsculas, acentos y espacios. Los puntos y signos de los nombres se conservan. No hay comparación aproximada. Si varias hojas coinciden, se selecciona una antes de confirmar. Se admiten columnas extra, pero no forman parte de los 36 campos de auditoría.
 - Cada fila es una auditoría. Solo se ignoran filas completamente vacías. Los encabezados duplicados normalizados bloquean esa hoja; una hoja inválida no impide usar otra válida.
 - Los estados de control admitidos son CUMPLE, NO CUMPLE y N/A. Los visuales admiten LIMPIO, DETECTADO y N/A. Vacíos generan advertencia y se preservan; desconocidos bloquean la confirmación y no se convierten. Los estatus de auditoría admitidos son CONFORME y NO CONFORME. Cambie explícitamente esta lista si la planta usa otros estados válidos.
-- Se suman las evaluaciones aplicables antes de dividir. Los once controles están separados de los siete defectos y del texto dimensional. N/A y vacíos se excluyen del denominador. Sin denominador se muestra Sin datos aplicables. Sin hallazgos registrados no implica completamente conforme cuando faltan evaluaciones.
+- Se suman las evaluaciones aplicables antes de dividir. Los once controles están separados de los siete defectos y del texto dimensional. N/A cuenta como cumplido en numerador y denominador; los vacíos se excluyen. Sin denominador se muestra Sin datos aplicables. Sin hallazgos registrados no implica completamente conforme cuando faltan evaluaciones.
 - La zona de planta asumida es America/Mexico_City, configurable. Las fechas Excel sin zona se interpretan como hora local y se guarda su fecha de calendario sin convertirla a UTC. La hora y el valor original permanecen en el detalle. Se aceptan fechas nativas y texto AAAA-MM-DD, DD/MM/AAAA, con hora opcional HH:MM:SS; también AAAA-MM-DDTHH:MM:SS. No se adivinan fechas ambiguas, números seriales sin formato fecha ni formatos estadounidenses.
 - Las semanas empiezan el lunes. Los períodos intermedios sin registros tienen cantidad cero y porcentaje nulo, y la evolución muestra huecos. El intervalo visual va de la primera a la última auditoría filtrada.
 - Categorías se normalizan en espacios/mayúsculas sin fusionar nombres por similitud. Cada celda de línea/máquina se trata como categoría literal; no se divide una cadena que pueda contener múltiples nombres porque no se conoce un separador fiable.
@@ -163,7 +163,7 @@ Las gu?as de lectura comparten la tipograf?a del sistema, las superficies y los 
 
 Se incluye una gráfica adicional (16 en total) de **Cumplimiento por nómina de operador**, disponible en dashboard y presentación con explicación «?». Utiliza **Nómina Operador** para identificar al empleado auditado; **Nomina Inspector** identifica a quien realizó la auditoría. El filtro Nómina Operador afecta a todos los indicadores, gráficas, tabla y CSV. La tabla también muestra la nómina del operador y permite ordenar por ella.
 
-Se suman CUMPLE y NO CUMPLE de los once controles por cada nómina antes de calcular el porcentaje; N/A y vacíos se mantienen aparte. Se muestran auditorías totales, evaluaciones aplicables, auditorías con incumplimientos y con defectos. Las nóminas se conservan como identificadores, incluidos ceros iniciales. Los registros sin nómina se agrupan aparte. Estos indicadores resumen condiciones de las auditorías asociadas al operador, incluidos mantenimiento y equipo, y no atribuyen causalidad ni miden productividad.
+Se calcula (CUMPLE + N/A) / (CUMPLE + N/A + NO CUMPLE) de los once controles por cada nómina. Los vacíos se excluyen y los valores originales se conservan. Se muestran auditorías totales, evaluaciones aplicables, auditorías con incumplimientos y con defectos. Las nóminas se conservan como identificadores, incluidos ceros iniciales. Los registros sin nómina se agrupan aparte. Estos indicadores resumen condiciones de las auditorías asociadas al operador, incluidos mantenimiento y equipo, y no atribuyen causalidad ni miden productividad.
 
 Las migraciones `0002_audit_operador` y `0003_backfill_operator` añaden el campo consultable y recuperan las nóminas desde los valores ya guardados, sin volver a importar archivos. En otra instalación ejecute `python manage.py migrate` antes de iniciar. Se aprobaron 38 pruebas, incluidas ponderación por nómina, distinción de identificadores 0007/7, N/A, operadores e inspectores separados, filtros combinados y recuperación de datos existentes. Chrome verificó gráfica, filtro, ayuda y presentación en pantalla completa, sin errores JavaScript.
 
@@ -225,3 +225,18 @@ El servicio espera a que PostgreSQL esté saludable antes de aplicar migraciones
 ### Verificación de Docker y límites
 
 Las dos configuraciones de Compose se validaron con Docker Compose. Se comprobaron por pruebas Django el directorio privado configurable, la recopilación de CSS/JS con DEBUG=0 y el rechazo de un arranque sin SECRET_KEY en ese modo. La construcción y el arranque real del contenedor no pudieron verificarse: el entorno devuelve `permission denied` al acceder a `npipe:////./pipe/docker_engine`. Ejecute los comandos anteriores desde su terminal con acceso a Docker Desktop. No se publicó el proyecto ni se transfirieron archivos de auditoría.
+
+
+## Filtro semanal y cumplimiento
+
+El filtro Semana permite elegir un intervalo ISO de lunes a domingo, con sus fechas visibles. Se combina con los demás filtros y se conserva en las gráficas, la presentación, la paginación y el CSV. La agrupación diaria o semanal de Evolución es independiente.
+
+Los N/A de los once controles cuentan como cumplidos: (CUMPLE + N/A) / (CUMPLE + N/A + NO CUMPLE). Esta regla se aplica también a importaciones existentes sin recargarlas. Se mantienen separados los valores originales CUMPLE y N/A para consultar su origen. Los vacíos no cuentan como cumplidos; las detecciones visuales conservan su cálculo.
+
+## Exportar presentaciones
+
+En **Modo presentación**, seleccione las gráficas y una, dos o cuatro por diapositiva. Pulse **Exportar PDF** o **Exportar PowerPoint** para descargar todas las diapositivas seleccionadas en formato horizontal 16:9, conservando los datos filtrados. Al terminar se restaura la diapositiva que estaba consultando. Sin selección se deshabilita la exportación.
+
+Cada página o diapositiva se captura como imagen de alta resolución; los gráficos del PowerPoint no son gráficos editables de Office. El archivo `.pptx` incluye el texto y los filtros en las notas. La exportación conserva el contenido visible en cada diapositiva; para tablas extensas conviene aplicar filtros y elegir una gráfica por diapositiva. El CSV sigue disponible para consultar todos los registros.
+
+La generación ocurre en el navegador con bibliotecas locales incluidas en `static/vendor`; funciona sin CDN ni servicios externos. Consulte versiones y licencias en `static/vendor/EXPORT-LIBRARIES.md`.

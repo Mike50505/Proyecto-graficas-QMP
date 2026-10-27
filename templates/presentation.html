@@ -1,6 +1,6 @@
 {% extends 'base.html' %}{% load static asset_tags %}
 {% block body_class %}presentation-mode{% endblock %}
-{% block content %}
+{% block content %}<link rel="stylesheet" href="{% asset 'presentation-export.css' %}">
 <header class="studio-header"><a class="studio-back" href="{% url 'dashboard' %}?{{ query }}">{% include 'icons.html' with name='back' %} Dashboard</a><span class="studio-brand">FCD <span>/</span> Presentaciones</span><span class="studio-indicator"><i></i> Tus filtros se conservan</span></header>
 {% if imp %}
 <div class="studio-intro"><div><p class="eyebrow">DALE ESPACIO A TUS DATOS</p><h1>Una historia.<br><span class="hero-muted">Tu perspectiva.</span></h1></div><div class="intro-note"><span class="note-line"></span><p>Elige qué contar.<br>Nosotros ponemos el escenario.</p></div></div>
@@ -11,6 +11,8 @@
  <div class="selection-actions"><button type="button" id="select-all">Todas</button><span>·</span><button type="button" id="select-none">Ninguna</button></div>
  <div class="layout-setting"><label for="charts-per-page">Gráficas por diapositiva</label><select id="charts-per-page" class="form-select"><option value="1" selected>Una · Enfoque</option><option value="2">Dos · Comparación</option><option value="4">Cuatro · Panorama</option></select></div>
  <button type="button" id="fullscreen" class="btn btn-primary present-start">{% include 'icons.html' with name='play' %} Iniciar presentación</button>
+ <div class="presentation-export-actions" data-capture-library="{% asset 'vendor/html2canvas.min.js' %}" data-pdf-library="{% asset 'vendor/jspdf.umd.min.js' %}" data-pptx-library="{% asset 'vendor/pptxgen.bundle.js' %}"><button type="button" id="export-pdf" class="btn btn-light">Exportar PDF</button><button type="button" id="export-pptx" class="btn btn-light">Exportar PowerPoint</button></div>
+ <p class="export-note">Se exportan las diapositivas seleccionadas con los filtros actuales. PowerPoint conserva el diseño como imagen.</p>
  <p class="sidebar-hint">Pantalla completa, sin distracciones.<br>Flechas para avanzar. Esc para volver.</p>
 </aside>
 <div class="studio-preview">
@@ -30,4 +32,4 @@
 {{ metrics|json_script:'dashboard-data' }}
 {% else %}<section class="panel empty"><h2>Aún no hay importaciones</h2><p>Importa un archivo desde el dashboard para preparar una presentación.</p></section>{% endif %}
 {% endblock %}
-{% block scripts %}<script src="{% asset 'vendor/chart.umd.js' %}"></script><script src="{% asset 'bar-track.js' %}"></script><script src="{% asset 'fallback-charts.js' %}"></script><script src="{% asset 'dashboard.js' %}"></script><script src="{% asset 'extra-charts.js' %}"></script><script src="{% asset 'presentation.js' %}"></script>{% endblock %}
+{% block scripts %}<script src="{% asset 'vendor/chart.umd.js' %}"></script><script src="{% asset 'bar-track.js' %}"></script><script src="{% asset 'fallback-charts.js' %}"></script><script src="{% asset 'dashboard.js' %}"></script><script src="{% asset 'extra-charts.js' %}"></script><script src="{% asset 'presentation-export.js' %}"></script><script src="{% asset 'presentation.js' %}"></script>{% endblock %}

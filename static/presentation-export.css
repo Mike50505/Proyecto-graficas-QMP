@@ -1,0 +1,19 @@
+.presentation-export-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.presentation-export-actions .btn { flex: 1; font-size: 11px; }
+.export-note { font-size: 10px; color: #6e6e73; margin-top: 10px; line-height: 1.6; }
+body.presentation-exporting { cursor: progress; }
+body.presentation-exporting .studio-sidebar { pointer-events: none; }
+body .presentation-stage.export-capture {
+  position: fixed !important; inset: 0 auto auto 0 !important;
+  width: 1600px !important; height: 900px !important; aspect-ratio: auto !important;
+  padding: 42px 56px 28px !important; border-radius: 0 !important;
+  z-index: 1000; box-shadow: none !important;
+}
+.export-capture .slide-heading h2 { font-size: 40px !important; }
+.export-capture .slide-stat strong { font-size: 50px !important; }
+.export-capture .stage-topline { margin-bottom: 26px !important; }
+.export-capture .slide-heading { margin-bottom: 24px !important; }
+.export-capture .chart-help-button, .export-capture details { display: none !important; }
+.export-capture .table-responsive, .export-capture .chart-wrap { overflow: hidden !important; }
+.export-capture .slide-footer { font-size: 10px; }
+.export-capture *, .export-capture *::before, .export-capture *::after { animation: none !important; transition: none !important; }

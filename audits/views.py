@@ -11,7 +11,7 @@ from django.views.decorators.http import require_http_methods
 from .models import Importation, Audit
 from .schema import HEADERS, DIMENSIONS
 from .importer import preview, confirm, InvalidExcel
-from .metrics import filtered, metrics
+from .metrics import filtered, metrics, week_options
 from .chart_catalog import CHARTS
 
 def active(request):
@@ -33,6 +33,8 @@ def dashboard(request, presentation=False):
     if changed: return redirect(reverse('presentation' if presentation else 'dashboard')+'?importacion='+str(imp.pk))
     context={'imports':Importation.objects.all(),'imp':imp,'charts':CHARTS}
     if imp:
+        context['weeks']=week_options(imp)
+        context['selected_week']=next((week['label'] for week in context['weeks'] if week['value']==request.GET.get('semana')), '')
         qs=filtered(imp,request.GET); context['metrics']=metrics(qs,request.GET.get('periodo')=='semanal')
         context['cards']=[('Total de auditorías',context['metrics']['summary']['total']),('Auditorías con incumplimientos',context['metrics']['summary']['with_failures']),('Total de incumplimientos',context['metrics']['summary']['failures']),('Cumplimiento de evaluaciones aplicables',str(context['metrics']['summary']['compliance'])+' %' if context['metrics']['summary']['compliance'] is not None else 'Sin datos aplicables'),('Auditorías con defectos visuales',context['metrics']['summary']['with_defects']),('Evaluaciones sin dato',context['metrics']['summary']['missing'])]
         context['filters']=[{'key':k,'label':v,'selected':request.GET.get(k,''),'options':imp.audits.order_by(k).values_list(k,flat=True).distinct()} for k,v in DIMENSIONS.items()]
