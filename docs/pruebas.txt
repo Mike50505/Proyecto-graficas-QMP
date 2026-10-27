@@ -26,3 +26,13 @@ Sin errores JavaScript ni desbordamiento horizontal en la página.
 Chrome: 15 ayudas en dashboard y en fullscreen; Esc cierra ayuda sin salir de presentacion.
 Foco restaurado, navegacion bloqueada dentro de ayuda, filtros inspector1248 y movil390px.
 Sin errores JavaScript ni desbordamiento horizontal. Capturas en docs/.
+
+Ajuste visual de ayudas: Chrome verifico las 15 explicaciones, temas claro/oscuro, Entendido, foco, Esc sin salir de fullscreen y movil390x844. Sin errores JavaScript. No se modificaron calculos.
+
+Cumplimiento por nomina de operador: 38 pruebas OK; migraciones aplicadas y ceros preservados. Chrome: grafica16, filtro, ayuda y fullscreen sin errores.
+
+Regresion visual: iconos SVG fijos y barras SVG con geometria explicita. Las16 graficas, fullscreen1/2/4 y movil. Segmentos positivos visibles, tendencia con altura util; 25/100 exacto, 0 separado de sin aplicables. Sin errores JS.
+
+Boton de ayuda normal: control visible ? + Guia, verificado en las16 tarjetas en escritorio y movil, apertura/cierre correctos. Presentacion mantiene su icono vectorial. Sin errores JavaScript.
+
+Visibilidad real de guias: 39 pruebas OK. Chrome y Edge, recarga normal HTTP8765, 16 botones en encabezados visibles y clicables, CSS/JS actuales sin errores, movil y fullscreen verificados.

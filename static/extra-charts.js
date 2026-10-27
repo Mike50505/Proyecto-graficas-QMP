@@ -3,18 +3,21 @@
 const source=document.getElementById('dashboard-data');if(!source)return;const m=JSON.parse(source.textContent);
 const colors=['#44baa3','#ee9a79','#a5a6b4','#d8b968','#439bfa','#bd99df','#e489b3'];
 const fmt=n=>n===null?'Sin datos aplicables':new Intl.NumberFormat('es-MX',{maximumFractionDigits:2}).format(n);
-function stacked(id,labels,series,details){
+function stacked(id,labels,series,details,percentage=false){
  const canvas=document.getElementById(id);if(!canvas)return;const box=canvas.parentElement;
  if(typeof Chart!=='undefined'){
-  box.style.height=Math.max(330,labels.length*38)+'px';new Chart(canvas,{type:'bar',data:{labels,datasets:series.map(s=>({label:s.label,data:s.data,backgroundColor:s.color,borderRadius:3}))},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{stacked:true,beginAtZero:true,ticks:{precision:0},title:{display:true,text:'Cantidad'}},y:{stacked:true}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{afterBody:ctx=>details[ctx[0].dataIndex]}}}}});return;
+  box.style.height=Math.max(330,labels.length*38)+'px';new Chart(canvas,{type:'bar',data:{labels,datasets:series.map(s=>({label:s.label,data:s.data,backgroundColor:s.color,borderRadius:3}))},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:false,scales:{x:{stacked:true,beginAtZero:true,...(percentage?{max:100}:{}),ticks:{precision:0},title:{display:true,text:percentage?'Porcentaje aplicable':'Cantidad'}},y:{stacked:true}},plugins:{legend:{position:'bottom'},tooltip:{callbacks:{afterBody:ctx=>details[ctx[0].dataIndex]}}}}});return;
  }
  canvas.remove();box.classList.add('additional-bars');const legend=document.createElement('div');legend.className='chart-legend';
  series.forEach(s=>{const item=document.createElement('span'),dot=document.createElement('i');dot.style.background=s.color;item.append(dot,document.createTextNode(s.label));legend.append(item);});box.append(legend);
  if(!labels.length){const p=document.createElement('p');p.className='chart-empty';p.textContent='Sin auditorías para los filtros seleccionados.';box.append(p);return;}
  const totals=labels.map((_,i)=>series.reduce((n,s)=>n+s.data[i],0)),max=Math.max(1,...totals),rows=document.createElement('div');rows.className='stack-rows';box.append(rows);
- labels.forEach((label,i)=>{const row=document.createElement('div');row.className='local-chart-row';const name=document.createElement('span');name.textContent=label;const track=document.createElement('div');track.className='local-track';track.style.background='transparent';const group=document.createElement('div');group.className='stack-group';group.style.width=totals[i]/max*100+'%';const counts=[];
- series.forEach(s=>{const n=s.data[i];counts.push(s.label+': '+n);const segment=document.createElement('span');segment.className='stack-segment';segment.style.width=(totals[i]?n/totals[i]*100:0)+'%';segment.style.background=s.color;segment.title=s.label+': '+n;group.append(segment);});track.append(group);track.setAttribute('role','img');track.setAttribute('aria-label',counts.join('; '));const info=document.createElement('span');info.textContent=details[i];row.title=counts.join(' · ')+' · '+details[i];row.append(name,track,info);rows.append(row);});
+ labels.forEach((label,i)=>{const row=document.createElement('div');row.className='local-chart-row';const name=document.createElement('span');name.textContent=label;const track=document.createElement('div');track.className='local-track';track.style.background='transparent';const counts=[];
+ const parts=series.map(s=>{const n=s.data[i];counts.push(s.label+': '+(n===null?'Sin datos aplicables':n));return {value:n,label:s.label,color:s.color};});window.FCDBarTrack(track,parts,percentage?100:max,label);
+ const info=document.createElement('span');info.textContent=details[i];row.title=counts.join(' · ')+' · '+details[i];row.append(name,track,info);rows.append(row);});
 }
+const operators=m.operators;
+stacked('operators',operators.map(r=>r.label),[{label:'CUMPLE %',data:operators.map(r=>r.compliance),color:colors[0]},{label:'NO CUMPLE %',data:operators.map(r=>r.applicable?100-r.compliance:null),color:colors[1]}],operators.map(r=>`${fmt(r.compliance)}${r.compliance===null?'':' %'} · ${r.total} auditorías · ${r.passes}/${r.applicable} aplicables · N/A ${r.na} · Sin dato ${r.missing} · ${r.bad} auditorías con incumplimientos · ${r.with_defects} con defectos`),true);
 const profiles=m.requirement_profile;
 stacked('requirement_profile',profiles.map(r=>r.label),[['CUMPLE','passes'],['NO CUMPLE','failures'],['N/A','na'],['Sin dato','missing']].map(([label,key],i)=>({label,data:profiles.map(r=>r[key]),color:colors[i]})),profiles.map(r=>`${fmt(r.compliance)}${r.compliance===null?'':' %'} · ${r.passes}/${r.applicable} aplicables · N/A ${r.na} · Sin dato ${r.missing}`));
 const distribution=m.failure_distribution;

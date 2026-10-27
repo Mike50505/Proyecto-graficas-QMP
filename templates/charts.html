@@ -1,7 +1,7 @@
 <div class="charts">{% for chart in charts %}
 <section class="panel{% if chart.id == 'machines' or chart.id == 'heat' or chart.id == 'process_heat' %} wide{% endif %}" data-chart="{{ chart.id }}">
-<button type="button" class="chart-help-button" data-help="{{ chart.id }}" aria-label="Explicar {{ chart.title }}" aria-haspopup="dialog" aria-controls="chart-help">?</button>
-<h2>{{ chart.title }}</h2><p>{{ chart.subtitle }}</p>
+
+<div class="chart-card-heading"><h2>{{ chart.title }}</h2><button type="button" class="chart-help-button" data-help="{{ chart.id }}" aria-label="Explicar {{ chart.title }}" aria-haspopup="dialog" aria-controls="chart-help" title="Explicar esta gráfica"><span class="help-question" aria-hidden="true">?</span><span class="help-control-label">Guía</span><svg class="help-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.2 8.2a3 3 0 0 1 5.8 1c0 2-3 2.8-3 4.8"/><circle cx="12" cy="18" r=".8" fill="currentColor" stroke="none"/></svg></button></div><p>{{ chart.subtitle }}</p>
 {% if chart.id == 'heat' %}{% include 'heatmap.html' with rows=metrics.heat dimension='Línea' %}
 {% elif chart.id == 'process_heat' %}{% include 'heatmap.html' with rows=metrics.process_heat dimension='Proceso' %}
 {% else %}<div class="chart-wrap"><canvas id="{{ chart.id }}" role="img" aria-label="{{ chart.title }}"></canvas></div>{% endif %}

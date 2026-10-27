@@ -1,4 +1,4 @@
-{% extends 'base.html' %}{% load static %}
+{% extends 'base.html' %}{% load static asset_tags %}
 {% block body_class %}presentation-mode{% endblock %}
 {% block content %}
 <header class="studio-header"><a class="studio-back" href="{% url 'dashboard' %}?{{ query }}">{% include 'icons.html' with name='back' %} Dashboard</a><span class="studio-brand">FCD <span>/</span> Presentaciones</span><span class="studio-indicator"><i></i> Tus filtros se conservan</span></header>
@@ -30,4 +30,4 @@
 {{ metrics|json_script:'dashboard-data' }}
 {% else %}<section class="panel empty"><h2>Aún no hay importaciones</h2><p>Importa un archivo desde el dashboard para preparar una presentación.</p></section>{% endif %}
 {% endblock %}
-{% block scripts %}<script src="{% static 'vendor/chart.umd.js' %}"></script><script src="{% static 'fallback-charts.js' %}"></script><script src="{% static 'dashboard.js' %}"></script><script src="{% static 'extra-charts.js' %}"></script><script src="{% static 'presentation.js' %}"></script>{% endblock %}
+{% block scripts %}<script src="{% asset 'vendor/chart.umd.js' %}"></script><script src="{% asset 'bar-track.js' %}"></script><script src="{% asset 'fallback-charts.js' %}"></script><script src="{% asset 'dashboard.js' %}"></script><script src="{% asset 'extra-charts.js' %}"></script><script src="{% asset 'presentation.js' %}"></script>{% endblock %}

@@ -1,8 +1,8 @@
 (() => {
 const source=document.getElementById('chart-catalog'),dialog=document.getElementById('chart-help');if(!source||!dialog)return;
 const catalog=new Map(JSON.parse(source.textContent).map(c=>[c.id,c]));let opener;
-document.addEventListener('click',event=>{const button=event.target.closest('[data-help]');if(!button)return;const c=catalog.get(button.dataset.help);if(!c)return;opener=button;document.getElementById('help-title').textContent=c.title;for(const [id,key] of [['help-meaning','meaning'],['help-calculation','calculation'],['help-interpretation','interpretation']])document.getElementById(id).textContent=c[key];dialog.showModal();});
-document.getElementById('close-chart-help').addEventListener('click',()=>dialog.close());
+document.addEventListener('click',event=>{const button=event.target.closest('[data-help]');if(!button)return;const c=catalog.get(button.dataset.help);if(!c)return;opener=button;document.getElementById('help-chart-number').textContent=String([...catalog.keys()].indexOf(c.id)+1).padStart(2,'0')+' / '+String(catalog.size).padStart(2,'0');document.getElementById('help-title').textContent=c.title;for(const [id,key] of [['help-meaning','meaning'],['help-calculation','calculation'],['help-interpretation','interpretation']])document.getElementById(id).textContent=c[key];dialog.showModal();document.getElementById('help-title').focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)dialog.animate([{opacity:0,transform:'translateY(12px) scale(.98)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:220,easing:'cubic-bezier(.23,1,.32,1)'});});
+for(const id of ['close-chart-help','acknowledge-chart-help'])document.getElementById(id).addEventListener('click',()=>dialog.close());
 dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
 dialog.addEventListener('close',()=>{if(opener?.isConnected&&!opener.closest('[hidden]'))opener.focus({preventScroll:true});});
 })();

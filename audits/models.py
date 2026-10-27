@@ -25,6 +25,7 @@ class Audit(models.Model):
     proceso = models.CharField(max_length=255,blank=True)
     linea = models.CharField(max_length=255,blank=True)
     maquina = models.CharField(max_length=255,blank=True)
+    operador = models.CharField(max_length=255,blank=True,default='',db_index=True)
     inspector = models.CharField(max_length=255,blank=True)
     parte = models.CharField(max_length=255,blank=True)
     failures = models.PositiveIntegerField(default=0)

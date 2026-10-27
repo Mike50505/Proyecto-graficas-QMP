@@ -132,3 +132,11 @@ CHARTS = [{'id': 'controls',
   'interpretation': 'El total apilado son detecciones, no auditorías únicas. Consulta también auditorías con '
                     'defectos / auditorías del proceso para considerar la cobertura. N/A y vacíos no se '
                     'convierten en defectos ni en LIMPIO.'}]
+
+CHARTS.append({
+ 'id':'operators','title':'Cumplimiento por nómina de operador',
+ 'subtitle':'Evaluaciones aplicables asociadas al empleado auditado',
+ 'meaning':'Agrupa las auditorías por Nómina Operador, el identificador del empleado auditado. Nomina Inspector corresponde a quien realizó la auditoría y no se usa para identificar al operador.',
+ 'calculation':'Para cada nómina: CUMPLE / (CUMPLE + NO CUMPLE) × 100 en los once controles. Se suman las evaluaciones antes de dividir. N/A y vacíos se excluyen y se muestran aparte. También se indican las auditorías con incumplimientos y con defectos visuales.',
+ 'interpretation':'Compara los porcentajes junto con la cantidad de auditorías y el denominador aplicable. Resume condiciones de las auditorías asociadas al operador, incluidos mantenimiento y equipo; no demuestra que el empleado sea la causa de los hallazgos ni mide su productividad. Sin evaluaciones aplicables no equivale a 100 %. Los registros sin nómina se agrupan aparte.'
+})

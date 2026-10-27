@@ -40,7 +40,7 @@ def pareto(qs,fields,state):
     return rows
 
 def grouped(qs,field):
-    rows=list(qs.values(field).annotate(total=Count('pk'),bad=Count('pk',filter=Q(failures__gt=0)),passes=Sum('passes'),failures=Sum('failures'),na=Sum('na')).order_by(field))
+    rows=list(qs.values(field).annotate(total=Count('pk'),bad=Count('pk',filter=Q(failures__gt=0)),passes=Sum('passes'),failures=Sum('failures'),na=Sum('na'),missing=Sum('missing'),with_defects=Count('pk',filter=Q(detections__gt=0))).order_by(field))
     for r in rows:
         r['label']=r[field] or 'Sin dato'; r['applicable']=r['passes']+r['failures']; r['pct']=pct(r['bad'],r['total']); r['compliance']=pct(r['passes'],r['applicable'])
     return rows
@@ -74,6 +74,12 @@ def visual_processes(qs):
     counts=qs.values('proceso').annotate(total=Count('pk'),with_defects=Count('pk',filter=Q(detections__gt=0)),**{'d'+str(i):Count('pk',filter=Q(**{'values__'+h:'DETECTADO'})) for i,h in enumerate(DEFECTS)}).order_by('proceso')
     return [{'label':r['proceso'] or 'Sin dato','total':r['total'],'with_defects':r['with_defects'],'pct':pct(r['with_defects'],r['total']),'counts':[r['d'+str(i)] for i in range(len(DEFECTS))],'detections':sum(r['d'+str(i)] for i in range(len(DEFECTS)))} for r in counts]
 
+def operator_compliance(qs):
+    rows=grouped(qs,'operador')
+    for row in rows:
+        row['label']='Nómina '+row['operador'] if row['operador'] else 'Sin nómina de operador'
+    return rows
+
 def metrics(qs,weekly=False):
     a=aggregate(qs)
     fn=TruncWeek if weekly else TruncDay
@@ -86,4 +92,4 @@ def metrics(qs,weekly=False):
             timeline.append({'label':current.isoformat(),'total':r['total'],'bad':r['bad'],'pct':pct(r['bad'],r['total']),'passes':r['passes'],'failures':r['failures'],'applicable':den,'compliance':pct(r['passes'],den)})
             current+=timedelta(days=7 if weekly else 1)
     distribution=[{'number':r['failures'],'label':str(r['failures'])+' incumplimientos','count':r['count'],'pct':pct(r['count'],a['total']),'with_missing':r['with_missing']} for r in qs.values('failures').annotate(count=Count('pk'),with_missing=Count('pk',filter=Q(missing__gt=0))).order_by('failures')]
-    return {'summary':a,'controls':pareto(qs,CONTROLS,'NO CUMPLE'),'defects':pareto(qs,DEFECTS,'DETECTADO'),'lines':grouped(qs,'linea'),'shifts':grouped(qs,'turno'),'processes':grouped(qs,'proceso'),'machines':sorted(grouped(qs,'maquina'),key=lambda r:-r['bad']),'timeline':timeline,'heat':heatmap(qs,'linea'),'requirements':CONTROLS,'requirement_profile':evaluation_profile(qs),'failure_distribution':distribution,'status_findings':status_findings(qs),'line_shifts':line_shifts(qs),'process_heat':heatmap(qs,'proceso'),'visual_processes':visual_processes(qs),'defect_types':DEFECTS}
+    return {'summary':a,'controls':pareto(qs,CONTROLS,'NO CUMPLE'),'defects':pareto(qs,DEFECTS,'DETECTADO'),'lines':grouped(qs,'linea'),'shifts':grouped(qs,'turno'),'processes':grouped(qs,'proceso'),'machines':sorted(grouped(qs,'maquina'),key=lambda r:-r['bad']),'timeline':timeline,'heat':heatmap(qs,'linea'),'requirements':CONTROLS,'requirement_profile':evaluation_profile(qs),'failure_distribution':distribution,'status_findings':status_findings(qs),'line_shifts':line_shifts(qs),'process_heat':heatmap(qs,'proceso'),'visual_processes':visual_processes(qs),'defect_types':DEFECTS,'operators':operator_compliance(qs)}

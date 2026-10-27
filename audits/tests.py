@@ -138,7 +138,7 @@ class ImportTests(TestCase):
         self.assertEqual(presentation.status_code,200)
         self.assertEqual(presentation.context['metrics'],dashboard.context['metrics'])
         self.assertEqual(presentation.context['metrics']['summary']['total'],1)
-        self.assertContains(presentation,'data-chart=',count=15)
+        self.assertContains(presentation,'data-chart=',count=16)
         self.assertContains(dashboard,'/presentacion/?')
         self.assertNotContains(presentation,'Consulta de auditorías')
 
@@ -197,11 +197,55 @@ class ImportTests(TestCase):
         self.assertEqual(only['summary']['total'],2);self.assertEqual(sum(r['count'] for r in only['failure_distribution']),2)
         self.assertEqual(sum(r['total'] for r in only['visual_processes']),2)
         empty=metrics(filtered(imp,{'proceso':'NO EXISTE'}));self.assertFalse(empty['status_findings']);self.assertFalse(empty['visual_processes']);self.assertTrue(all(r['compliance'] is None for r in empty['requirement_profile']))
-        self.assertEqual(len({c['id'] for c in CHARTS}),15)
+        self.assertEqual(len({c['id'] for c in CHARTS}),16)
         self.assertTrue(all(c[key] for c in CHARTS for key in ['title','meaning','calculation','interpretation']))
         self.user.is_superuser=True;self.user.save();self.client.force_login(self.user)
         for url in ['/','/presentacion/']:
             response=self.client.get(url,{'importacion':imp.pk,'proceso':'P1'})
-            self.assertContains(response,'class="chart-help-button"',count=15)
+            self.assertContains(response,'class="chart-help-button"',count=16)
             self.assertContains(response,'id="chart-help"',count=1)
             self.assertEqual(response.context['metrics'],only)
+
+    def test_operator_compliance_preserves_identifiers_and_weights(self):
+        imp,_=confirm(self.parse([
+            row(ID='1',**{'Nómina Operador':'0007','Nomina Inspector':'9999'}),
+            row(ID='2',**{'Nómina Operador':'0007',**{h:'N/A' for h in CONTROLS},CONTROLS[0]:'NO CUMPLE'}),
+            row(ID='3',**{'Nómina Operador':'7','Nomina Inspector':'0007',**{h:'N/A' for h in CONTROLS}}),
+            row(ID='4',**{'Nómina Operador':''})
+        ]),self.user)
+        groups={r['operador']:r for r in metrics(imp.audits.all())['operators']}
+        self.assertEqual(len(groups),3)
+        self.assertEqual((groups['0007']['total'],groups['0007']['passes'],groups['0007']['applicable'],groups['0007']['compliance']),(2,11,12,91.67))
+        self.assertEqual(groups['0007']['bad'],1);self.assertEqual(groups['0007']['na'],10)
+        self.assertIsNone(groups['7']['compliance']);self.assertEqual(groups['']['total'],1)
+        self.assertEqual(filtered(imp,{'operador':'0007'}).count(),2)
+        self.assertEqual(filtered(imp,{'operador':'0007','inspector':'9999'}).count(),1)
+        self.user.is_superuser=True;self.user.save();self.client.force_login(self.user)
+        response=self.client.get('/',{'importacion':imp.pk,'operador':'0007'})
+        self.assertEqual(response.context['metrics']['summary']['total'],2)
+        self.assertContains(response,'Nómina Operador')
+        self.assertContains(response,'data-help="operators"')
+        self.assertEqual(response.context['page'].paginator.count,2)
+
+    def test_operator_backfill_from_existing_json(self):
+        from importlib import import_module
+        from django.apps import apps
+        from django.db import connection
+        imp,_=confirm(self.parse([row(**{'Nómina Operador':'0000042'})]),self.user)
+        audit=imp.audits.get();Audit.objects.filter(pk=audit.pk).update(operador='')
+        from types import SimpleNamespace
+        import_module('audits.migrations.0003_backfill_operator').backfill_operator(apps,SimpleNamespace(connection=connection))
+        audit.refresh_from_db();self.assertEqual(audit.operador,'0000042')
+
+    def test_asset_versions_change_and_chart_guides_are_in_headers(self):
+        from audits.templatetags.asset_tags import asset
+        with tempfile.TemporaryDirectory() as tmp, override_settings(BASE_DIR=Path(tmp)):
+            static=Path(tmp)/'static';static.mkdir();file=static/'guide.css'
+            file.write_text('a{}');first=asset('guide.css')
+            file.write_text('a{color:blue}');self.assertNotEqual(asset('guide.css'),first)
+        imp,_=confirm(self.parse(),self.user)
+        self.user.is_superuser=True;self.user.save();self.client.force_login(self.user)
+        response=self.client.get('/',{'importacion':imp.pk})
+        self.assertContains(response,'class="chart-card-heading"',count=16)
+        self.assertContains(response,'class="help-control-label"',count=16)
+        self.assertContains(response,'/static/chart-help.css?v=')

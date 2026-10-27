@@ -11,10 +11,10 @@ window.renderLocalCharts=function(m){
    const group=document.createElement('div');group.className='local-chart-row';
    const title=document.createElement('span');title.textContent=r.label;group.append(title);
    const track=document.createElement('div');track.className='local-track';
-   const bar=document.createElement('div');bar.className='local-bar';
    let value=mode==='pareto'?r.count:mode==='process'?r.total:mode==='machine'?r.bad:mode==='line'?r.compliance:r.pct;
-   bar.style.width=(value===null?0:value/max*100)+'%';track.append(bar);
-   if(mode==='line'&&value!==null){const fail=document.createElement('div');fail.className='local-bar fail';fail.style.width=(100-value)+'%';track.append(fail);}
+   const parts=[{value,label:mode==='line'?'CUMPLE':'Cantidad',color:mode==='line'?'#44baa3':'#439bfa'}];
+   if(mode==='line'&&value!==null)parts.push({value:100-value,label:'NO CUMPLE',color:'#ee9a79'});
+   window.FCDBarTrack(track,parts,max,r.label);
    group.append(track);
    const info=document.createElement('span');
    info.textContent=mode==='pareto'?`${r.count} · Acum. ${r.cumulative===null?'Sin datos aplicables':r.cumulative+' %'}`:mode==='line'?`${value===null?'Sin datos aplicables':value+' % CUMPLE'} · ${r.total} auditorías · ${r.applicable} aplicables · ${r.na} N/A`:mode==='process'?`${r.total} auditorías`:`${r.bad} / ${r.total} auditorías · ${r.pct} %`;

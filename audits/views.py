@@ -37,7 +37,7 @@ def dashboard(request, presentation=False):
         qs=filtered(imp,request.GET); context['metrics']=metrics(qs,request.GET.get('periodo')=='semanal')
         context['cards']=[('Total de auditorías',context['metrics']['summary']['total']),('Auditorías con incumplimientos',context['metrics']['summary']['with_failures']),('Total de incumplimientos',context['metrics']['summary']['failures']),('Cumplimiento de evaluaciones aplicables',str(context['metrics']['summary']['compliance'])+' %' if context['metrics']['summary']['compliance'] is not None else 'Sin datos aplicables'),('Auditorías con defectos visuales',context['metrics']['summary']['with_defects']),('Evaluaciones sin dato',context['metrics']['summary']['missing'])]
         context['filters']=[{'key':k,'label':v,'selected':request.GET.get(k,''),'options':imp.audits.order_by(k).values_list(k,flat=True).distinct()} for k,v in DIMENSIONS.items()]
-        order=request.GET.get('orden','-date'); allowed=['date','-date','source_id','-source_id','linea','-linea','failures','-failures']
+        order=request.GET.get('orden','-date'); allowed=['date','-date','source_id','-source_id','linea','-linea','failures','-failures','operador','-operador']
         context['page']=Paginator(qs.order_by(order if order in allowed else '-date','pk'),25).get_page(request.GET.get('pagina'))
         params=request.GET.copy(); params.pop('pagina',None); context['query']=params.urlencode()
     return render(request,'presentation.html' if presentation else 'dashboard.html',context)

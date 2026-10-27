@@ -154,3 +154,27 @@ Capturas nuevas en `docs/`: `grafica-cumplimiento-requisito.png`, `grafica-estat
 ## Contenido del repositorio
 
 El repositorio incluye c?digo, migraciones, configuraci?n de ejemplo, documentaci?n y Excel sint?ticos. El Excel real, la base local con usuarios, las sesiones, las credenciales y las capturas con datos de planta se excluyen mediante .gitignore. Las capturas mencionadas en la documentaci?n pertenecen a la revisi?n local y no se publican. La prueba del Excel de referencia se omite autom?ticamente si ese archivo no est? disponible.
+
+### Est?tica de las explicaciones
+
+Las gu?as de lectura comparten la tipograf?a del sistema, las superficies y los acentos del dashboard y de las diapositivas. La versi?n clara se usa en el dashboard y la oscura en presentaci?n. La f?rmula aparece destacada y el bot?n **Entendido** cierra la gu?a. Los estilos est?n en `static/chart-help.css`; se mantienen el cierre con Esc y la restauraci?n del foco. Revisi?n visual en Chrome de las 15 gu?as, con capturas en escritorio y m?vil: `docs/ayuda-apple-*.png` (evidencias locales excluidas del repositorio).
+
+## Cumplimiento por nómina de operador
+
+Se incluye una gráfica adicional (16 en total) de **Cumplimiento por nómina de operador**, disponible en dashboard y presentación con explicación «?». Utiliza **Nómina Operador** para identificar al empleado auditado; **Nomina Inspector** identifica a quien realizó la auditoría. El filtro Nómina Operador afecta a todos los indicadores, gráficas, tabla y CSV. La tabla también muestra la nómina del operador y permite ordenar por ella.
+
+Se suman CUMPLE y NO CUMPLE de los once controles por cada nómina antes de calcular el porcentaje; N/A y vacíos se mantienen aparte. Se muestran auditorías totales, evaluaciones aplicables, auditorías con incumplimientos y con defectos. Las nóminas se conservan como identificadores, incluidos ceros iniciales. Los registros sin nómina se agrupan aparte. Estos indicadores resumen condiciones de las auditorías asociadas al operador, incluidos mantenimiento y equipo, y no atribuyen causalidad ni miden productividad.
+
+Las migraciones `0002_audit_operador` y `0003_backfill_operator` añaden el campo consultable y recuperan las nóminas desde los valores ya guardados, sin volver a importar archivos. En otra instalación ejecute `python manage.py migrate` antes de iniciar. Se aprobaron 38 pruebas, incluidas ponderación por nómina, distinción de identificadores 0007/7, N/A, operadores e inspectores separados, filtros combinados y recuperación de datos existentes. Chrome verificó gráfica, filtro, ayuda y presentación en pantalla completa, sin errores JavaScript.
+
+### Controles de ayuda y barras locales
+
+El botón de ayuda usa un signo de interrogación vectorial con dimensiones explícitas y superficies azul tenue coherentes en ambas vistas. Las barras HTML/SVG locales usan `static/bar-track.js` para dibujar su geometría en un SVG con altura explícita: el dibujo no depende de porcentajes de altura en elementos anidados. Las series conservan sus proporciones; un valor 0 muestra una línea base y un valor sin aplicables se distingue con un fondo tramado, manteniendo el texto de su estado. No se cambian los indicadores.
+
+Revisión de regresión en Chrome: las 16 gráficas en vista normal, móvil y presentación con 1, 2 y 4 por pantalla; segmentos positivos con ancho y altura visibles, tendencias con altura útil, ayudas con icono visible y cierre con Esc. También se comprobó que un valor 25 en escala 100 ocupa 25 % del ancho, que 0 no dibuja un segmento positivo y que Sin datos aplicables sigue separado. Sin errores JavaScript. Esta revisión corresponde al renderizado local; la biblioteca Chart.js conserva la limitación de descarga documentada anteriormente.
+
+### Visibilidad de las guías y actualización de archivos
+
+El botón **? Guía** forma parte del encabezado de cada gráfica mediante flex, sin posicionamiento superpuesto. Los archivos CSS y JavaScript se cargan con una versión calculada desde el archivo local (`audits/templatetags/asset_tags.py`); una recarga normal solicita la versión actual cuando cambia su contenido. En DEBUG los templates se leen con loaders sin caché para reflejar cambios de HTML sin conservar una plantilla anterior.
+
+Verificación: 39 pruebas aprobadas. Chrome y Edge contra el puerto 8765, después de una recarga normal: los 16 botones se comprobaron visibles, sin obstrucciones y clicables; todos abrieron y cerraron su guía. También se verificaron móvil390px y presentación en pantalla completa. CSS/JS respondieron sin errores. Capturas locales: `docs/guia-visible-chrome.png` y `docs/guia-visible-edge.png`.

@@ -32,3 +32,11 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_EXCEL_BYTES + 1048576
 FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_EXCEL_BYTES
 SESSION_COOKIE_HTTPONLY = True
 AUTH_PASSWORD_VALIDATORS = [{'NAME':'django.contrib.auth.password_validation.MinimumLengthValidator'}]
+
+# Development templates must reflect file edits without retaining an older HTML layout.
+if DEBUG:
+    TEMPLATES[0]['APP_DIRS']=False
+    TEMPLATES[0]['OPTIONS']['loaders']=[
+        'django.template.loaders.filesystem.Loader',
+        'django.template.loaders.app_directories.Loader',
+    ]
