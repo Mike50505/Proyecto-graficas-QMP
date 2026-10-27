@@ -54,7 +54,7 @@ def data(request):
 def upload(request):
     context={}
     # Pending bytes are private, token stored only in this user's session; expire after one day.
-    private=settings.BASE_DIR/'private'; private.mkdir(exist_ok=True)
+    private=Path(settings.PRIVATE_DIR or settings.BASE_DIR/'private'); private.mkdir(exist_ok=True)
     import time
     for old in private.glob('*.xlsx'):
         if old.stat().st_mtime<time.time()-86400: old.unlink(missing_ok=True)

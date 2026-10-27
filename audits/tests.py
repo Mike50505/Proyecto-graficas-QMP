@@ -249,3 +249,28 @@ class ImportTests(TestCase):
         self.assertContains(response,'class="chart-card-heading"',count=16)
         self.assertContains(response,'class="help-control-label"',count=16)
         self.assertContains(response,'/static/chart-help.css?v=')
+
+    def test_configurable_private_upload_directory(self):
+        self.user.is_superuser=True;self.user.save();self.client.force_login(self.user)
+        with tempfile.TemporaryDirectory() as tmp, override_settings(PRIVATE_DIR=Path(tmp)/'uploads'):
+            response=self.client.post('/importar/',{'archivo':SimpleUploadedFile('docker.xlsx',excel())})
+            self.assertEqual(response.status_code,200)
+            self.assertEqual(len(list((Path(tmp)/'uploads').glob('*.xlsx'))),1)
+            result=response.context['result']
+            response=self.client.post('/importar/',{'confirmar':'1','hash':result['hash'],'hoja':result['sheet']})
+            self.assertEqual(response.status_code,302)
+            self.assertFalse(list((Path(tmp)/'uploads').glob('*.xlsx')))
+
+    def test_production_requires_secret(self):
+        import subprocess,os,sys
+        env=os.environ.copy();env['DEBUG']='0';env['SECRET_KEY']=''
+        result=subprocess.run([sys.executable,'-c','import config.settings'],env=env,cwd=Path(__file__).resolve().parent.parent,capture_output=True,text=True)
+        self.assertNotEqual(result.returncode,0)
+        self.assertIn('Configure SECRET_KEY',result.stderr)
+
+    def test_production_static_collection(self):
+        from django.core.management import call_command
+        with tempfile.TemporaryDirectory() as tmp, override_settings(DEBUG=False,STATIC_ROOT=Path(tmp)):
+            call_command('collectstatic',interactive=False,verbosity=0)
+            self.assertTrue((Path(tmp)/'chart-help.css').is_file())
+            self.assertTrue((Path(tmp)/'bar-track.js').is_file())

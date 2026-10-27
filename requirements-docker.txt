@@ -1,0 +1,4 @@
+-r requirements.txt
+gunicorn>=23,<24
+whitenoise>=6.12,<7
+tzdata>=2025.2

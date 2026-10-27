@@ -36,3 +36,8 @@ Regresion visual: iconos SVG fijos y barras SVG con geometria explicita. Las16 g
 Boton de ayuda normal: control visible ? + Guia, verificado en las16 tarjetas en escritorio y movil, apertura/cierre correctos. Presentacion mantiene su icono vectorial. Sin errores JavaScript.
 
 Visibilidad real de guias: 39 pruebas OK. Chrome y Edge, recarga normal HTTP8765, 16 botones en encabezados visibles y clicables, CSS/JS actuales sin errores, movil y fullscreen verificados.
+
+Docker: 42 pruebas Django OK. Compose SQLite y overridePostgreSQL validos.
+Preparar_docker.ps1 genera configuracion y conserva la clave existente (idempotencia verificada).
+Directorio privado configurable, collectstatic con DEBUG0 y SECRET_KEY requerida verificados.
+Motor Docker inaccesible por permiso npipe docker_engine; build y ejecucion no comprobados.

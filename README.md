@@ -178,3 +178,50 @@ Revisión de regresión en Chrome: las 16 gráficas en vista normal, móvil y pr
 El botón **? Guía** forma parte del encabezado de cada gráfica mediante flex, sin posicionamiento superpuesto. Los archivos CSS y JavaScript se cargan con una versión calculada desde el archivo local (`audits/templatetags/asset_tags.py`); una recarga normal solicita la versión actual cuando cambia su contenido. En DEBUG los templates se leen con loaders sin caché para reflejar cambios de HTML sin conservar una plantilla anterior.
 
 Verificación: 39 pruebas aprobadas. Chrome y Edge contra el puerto 8765, después de una recarga normal: los 16 botones se comprobaron visibles, sin obstrucciones y clicables; todos abrieron y cerraron su guía. También se verificaron móvil390px y presentación en pantalla completa. CSS/JS respondieron sin errores. Capturas locales: `docs/guia-visible-chrome.png` y `docs/guia-visible-edge.png`.
+
+## Docker (Linux containers en Docker Desktop)
+
+Se incluyen `Dockerfile`, `.dockerignore`, `compose.yaml`, `compose.postgres.yaml`, `requirements-docker.txt`, `.env.docker.example`, `preparar_docker.ps1` y `docker/entrypoint.sh`. La imagen ejecuta Gunicorn como usuario sin privilegios, aplica migraciones y recopila archivos estáticos al iniciar. WhiteNoise sirve CSS/JS con DEBUG=0. La configuración sigue la [guía oficial de WhiteNoise para Django](https://whitenoise.readthedocs.io/en/stable/django.html).
+
+### Inicio con SQLite persistente
+
+Abra Docker Desktop con motor de contenedores Linux y ejecute desde la carpeta del proyecto:
+
+```powershell
+.\preparar_docker.ps1
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker exec web python manage.py createsuperuser --username administrator
+```
+
+El script genera una SECRET_KEY aleatoria en .env.docker sin mostrarla y conserva una clave ya configurada. La contraseña del administrador se solicita de forma interactiva; no está en la imagen ni en Git. Abra **http://127.0.0.1:8766/**. Si ese puerto está ocupado, cambie APP_PORT en .env.docker y ejecute otra vez `up -d`. Solo se expone en la interfaz local 127.0.0.1.
+
+La primera construcción requiere conexión para descargar Python y paquetes. Las gráficas HTML/SVG funcionan sin descargas adicionales. Para incluir Chart.js, ejecute `preparar_assets.ps1` con conexión antes de construir la imagen, como se explica arriba.
+
+```powershell
+# Ver estado, salud y logs
+docker compose --env-file .env.docker ps
+docker compose --env-file .env.docker logs -f web
+# Ejecutar pruebas dentro del contenedor
+docker compose --env-file .env.docker exec web python manage.py test
+# Reconstruir tras cambiar el codigo
+docker compose --env-file .env.docker up -d --build
+# Detener manteniendo los datos
+docker compose --env-file .env.docker down
+```
+
+El volumen nombrado `fcd_data` guarda `/data/db.sqlite3` y `/data/private`. Los datos sobreviven a la reconstrucción y a `down`. La base es nueva: la SQLite de Windows y sus usuarios/importaciones **no se copian automáticamente**. El Excel real, los archivos temporales, credenciales, sesiones, capturas y la base del equipo quedan fuera del contexto de construcción por `.dockerignore`. Los estáticos recopilados se guardan dentro del contenedor y se regeneran al arrancar. Se usa un worker con cuatro hilos y un timeout SQLite de 20 segundos para el uso local.
+
+### PostgreSQL opcional
+
+Configure una contraseña no vacía para POSTGRES_PASSWORD en .env.docker. Mantenga los valores POSTGRES_DB y POSTGRES_USER deseados y ejecute:
+
+```powershell
+docker compose --env-file .env.docker -f compose.yaml -f compose.postgres.yaml up -d --build
+docker compose --env-file .env.docker -f compose.yaml -f compose.postgres.yaml exec web python manage.py createsuperuser --username administrator
+```
+
+El servicio espera a que PostgreSQL esté saludable antes de aplicar migraciones. La base queda en el volumen `postgres_data`, sin publicar su puerto al equipo. Use los mismos argumentos `-f` para posteriores comandos de estado, logs o parada. Cambiar de SQLite a PostgreSQL usa una base distinta; no migra datos entre motores.
+
+### Verificación de Docker y límites
+
+Las dos configuraciones de Compose se validaron con Docker Compose. Se comprobaron por pruebas Django el directorio privado configurable, la recopilación de CSS/JS con DEBUG=0 y el rechazo de un arranque sin SECRET_KEY en ese modo. La construcción y el arranque real del contenedor no pudieron verificarse: el entorno devuelve `permission denied` al acceder a `npipe:////./pipe/docker_engine`. Ejecute los comandos anteriores desde su terminal con acceso a Docker Desktop. No se publicó el proyecto ni se transfirieron archivos de auditoría.
