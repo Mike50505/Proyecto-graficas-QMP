@@ -102,7 +102,9 @@ class ImportTests(TestCase):
     def test_access(self):
         for url in ['/','/datos/','/exportar/','/importar/','/auditoria/1/']: self.assertEqual(self.client.get(url).status_code,302)
         self.client.force_login(self.user)
-        for url in ['/','/datos/','/exportar/','/importar/']:self.assertEqual(self.client.get(url).status_code,403)
+        for url in ['/','/datos/','/importar/']:self.assertEqual(self.client.get(url).status_code,200)
+        self.assertEqual(self.client.get('/exportar/').status_code,404)
+        self.assertEqual(self.client.get('/auditoria/1/').status_code,404)
     def test_upload_preview_confirm(self):
         self.user.is_superuser=True;self.user.save();self.client.force_login(self.user)
         with tempfile.TemporaryDirectory() as tmp, override_settings(BASE_DIR=Path(tmp)):
@@ -123,8 +125,6 @@ class ImportTests(TestCase):
     def test_presentation_permissions_and_empty(self):
         self.assertEqual(self.client.get('/presentacion/').status_code,302)
         self.client.force_login(self.user)
-        self.assertEqual(self.client.get('/presentacion/').status_code,403)
-        self.user.is_superuser=True;self.user.save()
         response=self.client.get('/presentacion/')
         self.assertEqual(response.status_code,200)
         self.assertContains(response,'Aún no hay importaciones')

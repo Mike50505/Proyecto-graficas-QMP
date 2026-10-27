@@ -2,7 +2,7 @@ import csv, io, json, secrets
 from pathlib import Path
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
@@ -28,7 +28,6 @@ def active(request):
     return imp,False
 
 @login_required
-@permission_required('audits.view_audit',raise_exception=True)
 def dashboard(request, presentation=False):
     imp,changed=active(request)
     if changed: return redirect(reverse('presentation' if presentation else 'dashboard')+'?importacion='+str(imp.pk))
@@ -43,13 +42,11 @@ def dashboard(request, presentation=False):
     return render(request,'presentation.html' if presentation else 'dashboard.html',context)
 
 @login_required
-@permission_required('audits.view_audit',raise_exception=True)
 def data(request):
     imp,changed=active(request)
     return JsonResponse(metrics(filtered(imp,{} if changed else request.GET),request.GET.get('periodo')=='semanal') if imp else {})
 
 @login_required
-@permission_required('audits.add_importation',raise_exception=True)
 @require_http_methods(['GET','POST'])
 def upload(request):
     context={}
@@ -86,7 +83,6 @@ def upload(request):
     return render(request,'upload.html',context)
 
 @login_required
-@permission_required('audits.view_audit',raise_exception=True)
 def detail(request,pk):
     imp,_=active(request)
     audit=get_object_or_404(Audit,pk=pk,importation=imp)
@@ -100,7 +96,6 @@ def csv_safe(value):
     return value
 
 @login_required
-@permission_required('audits.view_audit',raise_exception=True)
 def export(request):
     imp,changed=active(request)
     if not imp: raise Http404

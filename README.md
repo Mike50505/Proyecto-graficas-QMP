@@ -33,7 +33,7 @@ Este script descarga únicamente las bibliotecas públicas Chart.js 4.4.8 y Boot
 
 ## Usuarios y permisos
 
-El superusuario tiene acceso completo. Las cuentas con acceso administrativo ven **Administraci?n** en el encabezado. Entre ah? y seleccione **Usuarios ? A?adir usuario** para crear cuentas y asignar permisos. Tambi?n puede entrar directamente a `/admin/`. Para acceder al panel, la cuenta debe estar activa y tener habilitado **Es staff**; el superusuario ya tiene acceso. Para consulta asigne **audits | auditoría | Can view auditoría** (`audits.view_audit`). Para importar asigne además **audits | importación | Can add importación** (`audits.add_importation`). Las vistas, JSON, detalle y CSV están protegidos. Los permisos se aplican a todas las importaciones; no se implementa aislamiento por propietario porque el tablero es compartido de planta. No habilite permisos administrativos de edición de auditorías para usuarios de consulta.
+Todas las cuentas activas que inicien sesión pueden consultar el tablero, los detalles, las gráficas y exportar información; también pueden importar archivos Excel. No necesitan permisos individuales de auditoría. La administración de usuarios desde `/admin/` sigue reservada a cuentas con acceso de staff; mantenga ese acceso solo para administradores autorizados.
 
 ## Pruebas
 
