@@ -1,0 +1,21 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+db.sqlite3
+private/
+staticfiles/
+*.sqlite3
+
+# Datos reales y evidencias locales con informacion de planta
+*.xlsx
+!datos_sinteticos/*.xlsx
+docs/*.png
+docs/referencia.json
+*.sqlite3-*
+*.db
+# Configuracion local y credenciales
+.env.*
+!.env.example
+.codex/
+.agents/

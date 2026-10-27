@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% load static %}
+{% block body_class %}presentation-mode{% endblock %}
+{% block content %}
+<header class="studio-header"><a class="studio-back" href="{% url 'dashboard' %}?{{ query }}">{% include 'icons.html' with name='back' %} Dashboard</a><span class="studio-brand">FCD <span>/</span> Presentaciones</span><span class="studio-indicator"><i></i> Tus filtros se conservan</span></header>
+{% if imp %}
+<div class="studio-intro"><div><p class="eyebrow">DALE ESPACIO A TUS DATOS</p><h1>Una historia.<br><span class="hero-muted">Tu perspectiva.</span></h1></div><div class="intro-note"><span class="note-line"></span><p>Elige qué contar.<br>Nosotros ponemos el escenario.</p></div></div>
+<div class="studio-workspace">
+<aside class="studio-sidebar" aria-label="Configurar presentación">
+ <div class="sidebar-heading"><span class="step-label">01</span><div><h2>Tu selección</h2><p>Las gráficas de tu presentación</p></div><span id="selection-count" class="selection-count"></span></div>
+ <fieldset class="chart-fieldset"><legend class="sr-only">Gráficas que se mostrarán</legend><div id="chart-options"></div></fieldset>
+ <div class="selection-actions"><button type="button" id="select-all">Todas</button><span>·</span><button type="button" id="select-none">Ninguna</button></div>
+ <div class="layout-setting"><label for="charts-per-page">Gráficas por diapositiva</label><select id="charts-per-page" class="form-select"><option value="1" selected>Una · Enfoque</option><option value="2">Dos · Comparación</option><option value="4">Cuatro · Panorama</option></select></div>
+ <button type="button" id="fullscreen" class="btn btn-primary present-start">{% include 'icons.html' with name='play' %} Iniciar presentación</button>
+ <p class="sidebar-hint">Pantalla completa, sin distracciones.<br>Flechas para avanzar. Esc para volver.</p>
+</aside>
+<div class="studio-preview">
+ <div class="preview-label"><span>VISTA PREVIA</span><span id="preview-format">16:9</span></div>
+ <section id="presentation-stage" class="presentation-stage" aria-label="Diapositiva actual">
+  <div class="stage-topline"><span class="stage-brand">FCD<span> / Calidad</span></span><span id="slide-number">01</span></div>
+  <header class="slide-heading"><div><p id="slide-category" class="slide-category">AUDITORÍAS DE PROCESO</p><h2 id="slide-title">Tu presentación</h2><p id="slide-subtitle">Indicadores sobre la importación y los filtros seleccionados.</p></div><div class="slide-stat"><strong id="slide-value">{{ metrics.summary.total }}</strong><span id="slide-value-label">auditorías</span></div></header>
+  {% if not metrics.summary.total %}<p class="stage-warning">Los filtros no producen resultados.</p>{% endif %}
+  <div id="presentation-grid" class="presentation-grid">{% include 'charts.html' %}</div>
+  <section id="empty-selection" class="empty-slide" hidden><span class="empty-orbit">{% include 'icons.html' %}</span><h2>Tu historia empieza aquí.</h2><p>Selecciona al menos una gráfica para crear tu presentación.</p></section>
+  <footer class="slide-footer"><span>{{ imp.start|date:'d M Y' }} — {{ imp.end|date:'d M Y' }}</span><span>{{ metrics.summary.total }} auditorías filtradas · {{ imp.filename }}</span></footer>
+ </section>
+ <div class="preview-navigation"><button id="previous-slide" type="button" class="circle-button" aria-label="Diapositiva anterior">{% include 'icons.html' with name='back' %}</button><div id="slide-dots" class="slide-dots" aria-label="Ir a diapositiva"></div><span id="slide-status" role="status" aria-live="polite"></span><button id="next-slide" type="button" class="circle-button" aria-label="Diapositiva siguiente">{% include 'icons.html' with name='next' %}</button></div>
+ <p id="presentation-message" role="status" class="preview-help">Elige tus gráficas y pulsa «Iniciar presentación».</p>
+</div></div>
+<div id="presenter-dock" class="presenter-dock" hidden><button type="button" id="exit-presentation" class="dock-exit">{% include 'icons.html' with name='close' %}<span>Finalizar</span></button><span class="dock-divider"></span><button type="button" id="presenter-previous" aria-label="Diapositiva anterior">{% include 'icons.html' with name='back' %}</button><span id="presenter-status" aria-live="off">1 / 8</span><button type="button" id="presenter-next" aria-label="Diapositiva siguiente">{% include 'icons.html' with name='next' %}</button><span class="dock-divider"></span><span class="dock-hint">← → para navegar</span></div>
+{{ metrics|json_script:'dashboard-data' }}
+{% else %}<section class="panel empty"><h2>Aún no hay importaciones</h2><p>Importa un archivo desde el dashboard para preparar una presentación.</p></section>{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{% static 'vendor/chart.umd.js' %}"></script><script src="{% static 'fallback-charts.js' %}"></script><script src="{% static 'dashboard.js' %}"></script><script src="{% static 'extra-charts.js' %}"></script><script src="{% static 'presentation.js' %}"></script>{% endblock %}

@@ -1,0 +1,28 @@
+Verificaci?n local final ? 26/10/2026
+Python 3.13.15 / Django 5.2.17 / openpyxl 3.1.5
+manage.py test: 28 pruebas, OK.
+manage.py check: sin incidencias.
+makemigrations --check --dry-run: sin cambios pendientes.
+Las migraciones fueron ejecutadas en SQLite.
+Chrome headless: escritorio 1440px y m?vil 390px, sin errores JS ni desbordamiento horizontal.
+Revisi?n de plantillas renderizadas con cliente Django; puerto local bloqueado por el entorno.
+Gr?ficas locales HTML/SVG verificadas. Chart.js y Bootstrap 5 pendientes de descarga por red bloqueada.
+PostgreSQL no ejecutado.
+
+Modo presentacion: 31 pruebas Django OK. Chrome contra servidor local: filtros conservados, 8 opciones, seleccion vacia, 1/2/4 graficas, navegacion, persistencia, fullscreen real y ancho movil 390px, sin errores JS. Capturas presentacion-*.png.
+
+Rediseño inspirado en Apple y presentación por diapositivas:
+31 pruebas Django OK; check sin incidencias; migraciones sin cambios.
+Chrome con servidor vivo: escritorio 1600x1000, proyector1366x768, móvil390x844.
+8 diapositivas, 1/2/4 por pantalla, selección vacía, preferencias, fullscreen real y Esc.
+Navegación con teclado, Home/End, controles ocultos y movimiento reducido.
+Filtros reales del inspector1248: 26 auditorías; sin mezclar el resto del archivo.
+Los once requisitos caben completos en el Pareto del proyector.
+Sin errores JavaScript ni desbordamiento horizontal en la página.
+
+27/10/2026 — Ampliacion de graficas y ayuda:
+36 pruebas Django aprobadas, incluidas las 7 nuevas vistas analiticas.
+15 graficas, cada una con explicacion de significado, calculo e interpretacion.
+Chrome: 15 ayudas en dashboard y en fullscreen; Esc cierra ayuda sin salir de presentacion.
+Foco restaurado, navegacion bloqueada dentro de ayuda, filtros inspector1248 y movil390px.
+Sin errores JavaScript ni desbordamiento horizontal. Capturas en docs/.

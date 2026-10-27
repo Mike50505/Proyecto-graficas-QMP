@@ -1,0 +1,9 @@
+<div class="charts">{% for chart in charts %}
+<section class="panel{% if chart.id == 'machines' or chart.id == 'heat' or chart.id == 'process_heat' %} wide{% endif %}" data-chart="{{ chart.id }}">
+<button type="button" class="chart-help-button" data-help="{{ chart.id }}" aria-label="Explicar {{ chart.title }}" aria-haspopup="dialog" aria-controls="chart-help">?</button>
+<h2>{{ chart.title }}</h2><p>{{ chart.subtitle }}</p>
+{% if chart.id == 'heat' %}{% include 'heatmap.html' with rows=metrics.heat dimension='Línea' %}
+{% elif chart.id == 'process_heat' %}{% include 'heatmap.html' with rows=metrics.process_heat dimension='Proceso' %}
+{% else %}<div class="chart-wrap"><canvas id="{{ chart.id }}" role="img" aria-label="{{ chart.title }}"></canvas></div>{% endif %}
+</section>{% endfor %}</div>
+{{ charts|json_script:'chart-catalog' }}
