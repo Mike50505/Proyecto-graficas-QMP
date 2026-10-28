@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -13,6 +14,7 @@ from .schema import HEADERS, DIMENSIONS
 from .importer import preview, confirm, InvalidExcel
 from .metrics import filtered, metrics, week_options
 from .chart_catalog import CHARTS
+from .kpi_guides import KPI_GUIDES
 
 def active(request):
     if request.GET.get('importacion'):
@@ -31,7 +33,7 @@ def active(request):
 def dashboard(request, presentation=False):
     imp,changed=active(request)
     if changed: return redirect(reverse('presentation' if presentation else 'dashboard')+'?importacion='+str(imp.pk))
-    context={'imports':Importation.objects.all(),'imp':imp,'charts':CHARTS}
+    context={'imports':Importation.objects.all(),'imp':imp,'charts':CHARTS,'kpi_guides':KPI_GUIDES}
     if imp:
         context['weeks']=week_options(imp)
         context['selected_week']=next((week['label'] for week in context['weeks'] if week['value']==request.GET.get('semana')), '')
@@ -96,6 +98,25 @@ def csv_safe(value):
     # Excel text wrapper is not used: no executable formulas in exported content.
     if value.isdigit() and value.startswith('0'): return "'"+value
     return value
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def delete_importation(request, pk):
+    imp = get_object_or_404(Importation, pk=pk)
+    if request.method == 'POST':
+        if request.POST.get('confirmar') != 'eliminar':
+            return HttpResponse('Confirma la eliminación de la importación.', status=400)
+        with transaction.atomic():
+            imp = get_object_or_404(Importation.objects.select_for_update(), pk=pk)
+            filename = imp.filename
+            count = imp.audits.count()
+            imp.delete()
+        if request.session.get('active_import') == pk:
+            request.session.pop('active_import', None)
+        messages.success(request, f'Se eliminó la importación «{filename}» y sus {count} auditorías.')
+        return redirect('dashboard')
+    return render(request, 'delete_importation.html', {'imp': imp, 'audit_count': imp.audits.count()})
 
 @login_required
 def export(request):

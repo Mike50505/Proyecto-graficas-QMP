@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel delete-import-confirm">
+  <p class="eyebrow">IMPORTACIONES</p>
+  <h1>Eliminar importación</h1>
+  <p>Vas a eliminar <strong>{{ imp.filename }}</strong>, cargado el {{ imp.uploaded_at|date:'d/m/Y H:i' }}.</p>
+  <dl>
+    <dt>Auditorías que se eliminarán</dt><dd>{{ audit_count }}</dd>
+    <dt>Hoja importada</dt><dd>{{ imp.sheet }}</dd>
+    <dt>Período</dt><dd>{{ imp.start|date:'d/m/Y' }} al {{ imp.end|date:'d/m/Y' }}</dd>
+  </dl>
+  <p role="note">Se eliminarán todos los registros de esta importación, aunque tengas filtros activos. Esta acción es permanente. Las demás importaciones y el archivo Excel original en tu equipo se conservarán.</p>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="confirmar" value="eliminar">
+    <div class="actions">
+      <a class="btn btn-light" href="{% url 'dashboard' %}?importacion={{ imp.pk }}">Cancelar</a>
+      <button type="submit" class="btn btn-danger">Eliminar archivo importado y sus auditorías</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

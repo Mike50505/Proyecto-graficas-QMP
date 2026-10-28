@@ -240,3 +240,10 @@ En **Modo presentación**, seleccione las gráficas y una, dos o cuatro por diap
 Cada página o diapositiva se captura como imagen de alta resolución; los gráficos del PowerPoint no son gráficos editables de Office. El archivo `.pptx` incluye el texto y los filtros en las notas. La exportación conserva el contenido visible en cada diapositiva; para tablas extensas conviene aplicar filtros y elegir una gráfica por diapositiva. El CSV sigue disponible para consultar todos los registros.
 
 La generación ocurre en el navegador con bibliotecas locales incluidas en `static/vendor`; funciona sin CDN ni servicios externos. Consulte versiones y licencias en `static/vendor/EXPORT-LIBRARIES.md`.
+
+
+## Eliminar importaciones
+
+Seleccione el archivo en Importación activa y pulse Consultar. Use **Eliminar importación** para revisar el nombre, la hoja, el período y el total de auditorías antes de confirmar. El borrado elimina la importación completa y sus auditorías, independientemente de los filtros; conserva las otras importaciones y el Excel original del equipo. Después se muestra otra importación disponible o el estado vacío. Puede volver a importar el mismo Excel.
+
+Al igual que la consulta e importación, esta opción está disponible para usuarios autenticados. La eliminación requiere confirmación por POST y protección CSRF.
